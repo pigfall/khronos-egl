@@ -656,19 +656,27 @@ mod egl1_0 {
 		///
 		/// This will return a `BadParameter` error if `attrib_list` is not a valid
 		/// attributes list (if it does not terminate with `NONE`).
-		pub fn create_context(&self, display: Display, config: Config, share_context: Option<Context>, attrib_list: &[Int]) -> Result<Context, Error> {
-			check_int_list(attrib_list)?;
+		pub fn create_context(&self, display: Display, config: Config, share_context: Option<Context>, attrib_list: Option<&[Int]>) -> Result<Context, Error> {
+
+            let attrib_list_ptr = match attrib_list{
+                None=>ptr::null(),
+                Some(list)=>{
+			        check_int_list(list)?;
+                    list.as_ptr()
+                },
+            };
 			unsafe {
 				let share_context = match share_context {
 					Some(share_context) => share_context.as_ptr(),
 					None => NO_CONTEXT,
 				};
 
+
 				let context = self.api.eglCreateContext(
 					display.as_ptr(),
 					config.as_ptr(),
 					share_context,
-					attrib_list.as_ptr(),
+					attrib_list_ptr,
 				);
 
 				if context != NO_CONTEXT {
